@@ -14,6 +14,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"; // Importa Select per le varianti
+import { se } from "date-fns/locale";
 
 // --- TIPI DI DATI (con any come richiesto) ---
 // Per ora useremo 'any' per i tipi di dati di Strapi
@@ -291,7 +292,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     // ---
     return (
         <div className="flex flex-col gap-y-8 items-center min-h-screen bg-teal-800 w-full p-4 rounded-md">
-            <h2 className="text-center text-2xl font-bold text-white">Products</h2>
+            <h2 className="text-center text-2xl font-bold text-white">Products - {selectedCategory.label.toUpperCase()}</h2>
             {products.length === 0 && !loading && !error && (
                 <p className="text-white text-lg w-full">No products found for this category.</p>
             )}

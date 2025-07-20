@@ -39,8 +39,8 @@ export default function Home() {
 
   return (
     <div className="w-full h-screen font-inter"> {/* Aggiunto font-inter per una migliore estetica */}
-      <div className="w-full flex justify-between items-center mt-4">
-        <div className="flex items-center ps-8">
+      <div className="w-full flex justify-between items-center mt-4 px-8">
+        <div className="flex items-center">
           <div className="w-full flex">
             <Image
               src="/assets/img/logo.png"
@@ -51,7 +51,7 @@ export default function Home() {
           </div>
         </div>
         <div className="font-chase text-8xl hidden lg:block">Jason</div>
-        <div className="pe-8">
+        <div className="pe-4">
           <CartIcon />
         </div>
       </div>
@@ -60,7 +60,7 @@ export default function Home() {
         {/* Contenitore principale per i fetcher.
             'relative' è necessario affinché i figli con 'absolute' si posizionino correttamente al suo interno.
             Aggiunti stili estetici come 'rounded-lg' e 'shadow-lg'. */}
-        <div className="bg-teal-700 lg:p-32 grow h-full relative rounded-md shadow-lg">
+        <div className="bg-teal-700 grow h-full relative rounded-md shadow-lg">
           {/* Wrapper per CategoryFetcher
               - 'absolute inset-0' fa sì che occupi l'intero spazio del genitore 'relative'.
               - 'transition-opacity duration-500' abilita l'effetto di dissolvenza.
