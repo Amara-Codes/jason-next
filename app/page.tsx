@@ -3,6 +3,7 @@
 
 import type { Metadata } from "next";
 import LogoutButton from "@/components/logout-button";
+import CartIcon from "@/components/cart-icon";
 import Image from "next/image";
 import CategoryFetcher from "@/components/category-fetcher";
 import ProductFetcher from "@/components/product-fetcher";
@@ -51,7 +52,7 @@ export default function Home() {
         </div>
         <div className="font-chase text-8xl hidden lg:block">Jason</div>
         <div className="pe-8">
-          <LogoutButton />
+          <CartIcon />
         </div>
       </div>
 

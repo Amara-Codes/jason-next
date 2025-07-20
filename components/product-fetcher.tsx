@@ -1,7 +1,7 @@
 "use client"; // Mark this component as a Client Component
 
 import React, { useState, useEffect } from "react";
-
+import Cookies from "js-cookie"; // Importa js-cookie per gestire i cookie
 // Importa i componenti UI necessari da shadcn/ui
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
 
     // Nuovo stato per tenere traccia della variante selezionata per ogni prodotto.
-    const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: string | null }>({});
+    const [selectedVariants, setSelectedVariants] = useState<{ [productDocId: string]: string | null }>({});
 
 
     const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337/api";
@@ -59,14 +59,14 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                     }
                     const productsData = await productsResponse.json();
                     const fetchedProducts: Product[] = productsData.data.map((item: any) => ({
-                        id: item.id,
+                        id: item.documentId,
                         ...item // Tira giù tutto quello che viene fornito, senza .attributes
                     }));
                     setProducts(fetchedProducts);
 
                     // Inizializza le quantità e le varianti selezionate
                     const initialQuantities: { [key: string]: number } = {};
-                    const initialSelectedVariants: { [productId: string]: string | null } = {};
+                    const initialSelectedVariants: { [productDocId: string]: string | null } = {};
 
                     fetchedProducts.forEach((product) => {
                         // Supponendo che le varianti siano direttamente su `product.product_variants`
@@ -74,12 +74,12 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                         if (hasVariants) {
                             // Se ha varianti, seleziona la prima di default e inizializza la quantità per quella variante
                             const firstVariant = product.product_variants[0];
-                            initialSelectedVariants[product.id] = firstVariant.id;
-                            initialQuantities[`${product.id}-${firstVariant.id}`] = 1;
+                            initialSelectedVariants[product.documentId] = firstVariant.documentId;
+                            initialQuantities[`${product.documentId}-${firstVariant.documentId}`] = 1;
                         } else {
                             // Se non ha varianti, inizializza la quantità per il prodotto base
-                            initialSelectedVariants[product.id] = null; // Nessuna variante selezionata
-                            initialQuantities[product.id] = 1;
+                            initialSelectedVariants[product.documentId] = null; // Nessuna variante selezionata
+                            initialQuantities[product.documentId] = 1;
                         }
                     });
                     setQuantities(initialQuantities);
@@ -109,37 +109,40 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         // Supponendo che le varianti siano direttamente su `product.product_variants`
         const hasVariants = product.product_variants && product.product_variants && product.product_variants.length > 0;
         let currentPrice = product.price; // Prezzo direttamente su product
-        let currentStock = product.stock; // Stock direttamente su product
-        let selectedVariantId: string | null = null;
+        let currentStock = product.quantity; // Stock direttamente su product
+        let selectedVariantDocId: string | null = null;
         let selectedVariantName: string = '';
+        let currentMinimumQuantity = product.minimum_quantity; // Quantità minima di default
 
         if (hasVariants) {
-            selectedVariantId = selectedVariants[product.id];
+            selectedVariantDocId = selectedVariants[product.documentId];
             const selectedVariant = product.product_variants.find(
-                (variant: any) => variant.id === selectedVariantId
+                (variant: any) => variant.documentId === selectedVariantDocId
             );
 
             if (selectedVariant) {
-                currentPrice = selectedVariant.price_override !== undefined // Prezzo specifico per la variante
-                    ? selectedVariant.price_override
+                currentPrice = selectedVariant.price !== undefined // Prezzo specifico per la variante
+                    ? selectedVariant.price
                     : product.price;
-                currentStock = selectedVariant.stock;
+                currentStock = selectedVariant.quantity;
+                currentMinimumQuantity = selectedVariant.minimum_quantity || product.minimum_quantity; // Quantità minima della variante
                 selectedVariantName = selectedVariant.name;
             } else if (product.product_variants.length > 0) {
                  // Se non c'è una variante selezionata o quella selezionata non esiste, usa la prima disponibile
                 const fallbackVariant = product.product_variants[0];
-                currentPrice = fallbackVariant.price_override !== undefined
-                    ? fallbackVariant.price_override
+                currentPrice = fallbackVariant.price !== undefined
+                    ? fallbackVariant.price
                     : product.price;
-                currentStock = fallbackVariant.stock;
+                currentStock = fallbackVariant.quantity;
+                currentMinimumQuantity = fallbackVariant.minimum_quantity || product.minimum_quantity;
                 selectedVariantName = fallbackVariant.name;
             }
         }
 
-        const key = hasVariants && selectedVariantId ? `${product.id}-${selectedVariantId}` : product.id;
+        const key = hasVariants && selectedVariantDocId ? `${product.documentId}-${selectedVariantDocId}` : product.documentId;
         const currentQuantity = quantities[key] || 1; // La quantità è legata alla chiave specifica (prodotto o prodotto-variante)
 
-        return { currentPrice, currentStock, currentQuantity, key, selectedVariantId, selectedVariantName };
+        return { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, selectedVariantName };
     };
 
 
@@ -167,27 +170,64 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     // ---
     // Gestione della selezione della variante
     // ---
-    const handleVariantChange = (productId: string, variantId: string) => {
+    const handleVariantChange = (productDocId: string, variantId: string) => {
         setSelectedVariants((prevSelected) => ({
             ...prevSelected,
-            [productId]: variantId,
+            [productDocId]: variantId,
         }));
         // Quando la variante cambia, potresti voler resettare la quantità a 1 per quella nuova variante
-        const product = products.find(p => p.id === productId);
+        const product = products.find(p => p.documentId === productDocId);
         if (product && product.product_variants && product.product_variants) {
-            const variant = product.product_variants.find((v: any) => v.id === variantId);
+            const variant = product.product_variants.find((v: any) => v.documentId === variantId);
             if (variant) {
-                const key = `${productId}-${variantId}`;
+                const key = `${productDocId}-${variantId}`;
                 setQuantities(prev => ({ ...prev, [key]: 1 }));
             }
         }
+    };
+
+
+      const updateCartCookie = (itemToAdd: any) => {
+        let currentCart: any[] = [];
+        const existingCartCookie = Cookies.get('cart'); // Legge il cookie con js-cookie
+
+        if (existingCartCookie) {
+            try {
+                currentCart = JSON.parse(existingCartCookie);
+            } catch (e) {
+                console.error("Errore nel parsing del cookie del carrello esistente:", e);
+                currentCart = []; // Inizializza un carrello vuoto in caso di errore di parsing
+            }
+        }
+
+        const itemIndex = currentCart.findIndex(item =>
+            item.productDocId === itemToAdd.productDocId && item.variantDocId === itemToAdd.variantDocId
+        );
+
+        if (itemIndex > -1) {
+            // Se l'elemento esiste già, aggiorna la quantità
+            currentCart[itemIndex].quantity += itemToAdd.quantity;
+        } else {
+            // Altrimenti, aggiungi il nuovo elemento
+            currentCart.push(itemToAdd);
+        }
+
+        // Salva il carrello aggiornato nel cookie
+        // Imposta una data di scadenza (es. 7 giorni)
+        Cookies.set('cart', JSON.stringify(currentCart), { expires: 7 });
+
+        // Dispatch un evento custom per notificare ad altri componenti (es. CartIcon) che il carrello è stato aggiornato
+        // Questo è il meccanismo che userà il CartIcon per aggiornarsi
+        window.dispatchEvent(new Event('cartUpdated'));
+
+        console.log("Carrello aggiornato nel cookie:", currentCart);
     };
 
     // ---
     // Aggiungi prodotto/variante al carrello (qui dovrai integrare con useCart in futuro)
     // ---
     const handleAddToCart = (product: Product) => {
-        const { currentPrice, currentStock, currentQuantity, key, selectedVariantId, selectedVariantName } = getProductOrVariantDetails(product);
+        const { currentPrice, currentStock, currentQuantity, key, selectedVariantDocId, selectedVariantName } = getProductOrVariantDetails(product);
 
         if (currentQuantity <= 0) {
             alert("Seleziona una quantità valida.");
@@ -200,15 +240,18 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
 
         // --- QUI SARÀ INTEGRATA LA LOGICA DEL CARRELLO ---
         // Per ora, solo un log per dimostrare che i dati sono pronti
-        console.log("Aggiungi al carrello (simulato):", {
-            productId: product.id,
-            productName: product.name, // Accesso diretto a 'name'
-            variantId: selectedVariantId,
+        const itemToAdd = {
+            productDocId: product.documentId,
+            productDocumentId: product.documentId, // Aggiungi documentId se necessario
+            productName: product.name,
+            hasVariant: product.product_variants.length > 0, // Accesso diretto a 'name'
+            variantDocId: selectedVariantDocId,
             variantName: selectedVariantName,
             price: currentPrice,
             quantity: currentQuantity,
-        });
+        };
 
+        updateCartCookie(itemToAdd); // Aggiorna il cookie del carrello
         // Optional: Resetta la quantità del prodotto/variante a 1 dopo averlo aggiunto
         setQuantities((prevQuantities) => ({
             ...prevQuantities,
@@ -257,17 +300,17 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                 {products.map((product: any) => { // Product is also 'any' now
                     // Accesso diretto alle proprietà
                     const hasVariants = product.product_variants && product.product_variants && product.product_variants.length > 0;
-                    const { currentPrice, currentStock, currentQuantity, key, selectedVariantId, selectedVariantName } = getProductOrVariantDetails(product);
+                    const { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, selectedVariantName } = getProductOrVariantDetails(product);
 
                     return (
-                        <Card key={product.id} className="bg-teal-700 p-4 rounded-lg shadow-lg flex flex-col justify-between">
+                        <Card key={product.documentId} className="bg-teal-700 p-4 rounded-lg shadow-lg flex flex-col justify-between">
                             <div className="text-white">
                                 <h3 className="font-semibold text-xl mb-2">{product.name}</h3> {/* Accesso diretto a 'name' */}
                                 {hasVariants && (
                                     <div className="mb-4">
                                         <Select
-                                            value={selectedVariantId || ''}
-                                            onValueChange={(value) => handleVariantChange(product.id, value)}
+                                            value={selectedVariantDocId || ''}
+                                            onValueChange={(value) => handleVariantChange(product.documentId, value)}
                                             disabled={currentStock <= 0}
                                         >
                                             <SelectTrigger className="w-full bg-teal-600 text-white border-teal-500 focus:border-white">
@@ -275,8 +318,8 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                             </SelectTrigger>
                                             <SelectContent className="bg-teal-600 text-white">
                                                 {product.product_variants.map((variant: any) => ( // Variant is also 'any'
-                                                    <SelectItem key={variant.id} value={variant.id} className="hover:bg-teal-500">
-                                                        {variant.name} ({variant.stock} pz) {/* Accesso diretto a 'name' e 'stock' */}
+                                                    <SelectItem key={variant.documentId} value={variant.documentId} className="hover:bg-teal-500">
+                                                        {variant.name} ({variant.quantity} pz) {/* Accesso diretto a 'name' e 'stock' */}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -284,7 +327,11 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                     </div>
                                 )}
                                 <p className="text-md mb-1">Price: ${currentPrice.toFixed(2)}</p>
-                                <p className="text-sm opacity-80 mb-4">Available: {currentStock} pz</p>
+                                <div className="flex items-center gap-2 mn-4">
+                                <p className="text-sm opacity-80">Available:</p>
+                                <p className={`text-sm opacity-80 ${currentStock > currentMinimumQuantity ? 'text-green-500' : 'text-yellow-500'}`}>{currentStock ?? 0}</p>
+                                <p className="text-sm opacity-80">pz</p>
+                                </div>
                             </div>
                             <div className="flex items-center justify-between gap-2 mt-auto">
                                 <Button
@@ -317,7 +364,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 <Button
                                     onClick={() => handleAddToCart(product)}
                                     className="flex-1 ml-4 bg-emerald-900 text-white hover:bg-emerald-700"
-                                    disabled={currentStock <= 0 || (hasVariants && !selectedVariantId) || currentQuantity <= 0}
+                                    disabled={currentStock <= 0 || (hasVariants && !selectedVariantDocId) || currentQuantity <= 0}
                                 >
                                     <ShoppingCart className="h-4 w-4 mr-2" />
                                     Add
