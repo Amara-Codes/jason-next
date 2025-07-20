@@ -17,27 +17,27 @@ import {
 const basic = [
     {
         title: "Home",
-        url: "/",
+        url: "/admin",
         icon: Home,
     },
     {
         title: "Add Product",
-        url: "/add-product",
+        url: "/admin/add-product",
         icon: Cross,
     },
     {
         title: "Add Variant",
-        url: "/add-variant",
+        url: "/admin/add-variant",
         icon: Boxes,
     },
     {
         title: "Search",
-        url: "/search",
+        url: "/admin/search",
         icon: Search,
     },
     {
         title: "Settings",
-        url: "/settings",
+        url: "/admin/settings",
         icon: Settings,
     },
 ]
@@ -45,12 +45,12 @@ const basic = [
 const advanced = [
     {
         title: "Analytics",
-        url: "/soon",
+        url: "/admin/soon",
         icon: ChartNoAxesCombined,
     },
     {
         title: "AI suggestions",
-        url: "/soon",
+        url: "/admin/soon",
         icon: Bot,
     }
 ]
