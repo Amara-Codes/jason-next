@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation'; // For Next.js App Router navigation
 import { useState } from 'react';
+import { LogOut } from 'lucide-react';
 
 /**
  * LogoutButton component handles the user logout process.
@@ -50,9 +51,11 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+      className="lg:bg-red-500 lg:hover:bg-red-600 text-white font-bold lg:py-2 lg:px-4 lg:rounded-lg lg:shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mb-1.5 lg:mb-0"
       disabled={loading} // Disable button while loading
     >
+      <div className="hidden lg:block">
+
       {loading ? (
         <svg className="animate-spin h-5 w-5 text-white mr-2" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -61,6 +64,19 @@ export default function LogoutButton() {
       ) : (
         'Logout'
       )}
+      </div>
+
+      <div className="block lg:hidden">
+      {loading ? (
+        <svg className="animate-spin h-5 w-5 text-white mr-2" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      ) : (
+        <LogOut className="h-8 w-8 text-red-500" />
+      )}
+
+      </div>
     </button>
   );
 }

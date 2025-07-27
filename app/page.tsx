@@ -1,12 +1,9 @@
 // app/page.tsx
 "use client"
 
-import type { Metadata } from "next";
-import LogoutButton from "@/components/logout-button";
-import CartIcon from "@/components/cart-icon";
-import Image from "next/image";
 import CategoryFetcher from "@/components/category-fetcher";
 import ProductFetcher from "@/components/product-fetcher";
+import PublicHeader from "@/components/public-header";
 import { useState, useEffect } from 'react'; // Importa useState e useEffect
 
 export default function Home() {
@@ -39,22 +36,7 @@ export default function Home() {
 
   return (
     <div className="w-full h-screen font-inter"> {/* Aggiunto font-inter per una migliore estetica */}
-      <div className="w-full flex justify-between items-center mt-4 px-8">
-        <div className="flex items-center">
-          <div className="w-full flex">
-            <Image
-              src="/assets/img/logo.png"
-              alt="Logo"
-              width={80}
-              height={80}
-            />
-          </div>
-        </div>
-        <div className="font-chase text-8xl hidden lg:block">Jason</div>
-        <div className="pe-4">
-          <CartIcon />
-        </div>
-      </div>
+    <PublicHeader />
 
       <div className="flex mt-6 p-2 pt-0 lg:p-8 gap-16 w-full h-full">
         {/* Contenitore principale per i fetcher.

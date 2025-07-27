@@ -74,7 +74,7 @@ const CategoryFetcher = ({ onCategorySelect }: CategoryFetcherProps) => {
     return (
         <div className="flex flex-col gap-y-8 items-center min-h-screen bg-teal-800 w-full p-4 rounded-md">
             <h2 className="text-center text-2xl font-bold text-white">Select the Product Category</h2>
-            <div className="flex w-full max-w-4xl gap-4 flex-wrap justify-center">
+            <div className="flex flex-col lg:flex-row w-full max-w-4xl gap-4 lg:flex-wrap justify-center">
                 {categories.map((item) => (
                     <div
                         key={item.id}
