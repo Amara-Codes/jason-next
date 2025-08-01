@@ -1,57 +1,80 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Cookies from 'js-cookie'; // Import the js-cookie library
 import PublicHeader from '@/components/public-header';
-import CartIcon from '@/components/cart-icon';
-import Image from 'next/image';
 import { Trash2 } from 'lucide-react';
-
-
-
-// Define the type for a cart item
-
+import Link from 'next/link';
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Function to read cart items from the cookie
-    const loadCartFromCookie = () => {
-      try {
-        const cartCookie = Cookies.get('cart');
-        if (cartCookie) {
-          const parsedCart: any[] = JSON.parse(cartCookie);
-          setCartItems(parsedCart);
-        } else {
-          setCartItems([]); // No cart cookie found, initialize as empty
-        }
-      } catch (e) {
-        console.error("Failed to parse cart cookie:", e);
-        setError("Failed to load cart. It might be corrupted.");
-        setCartItems([]);
-      } finally {
-        setLoading(false);
+  // --- Function to load the cart from cookies ---
+  const loadCartFromCookie = useCallback(() => {
+    try {
+      const cartCookie = Cookies.get('cart');
+      if (cartCookie) {
+        const parsedCart: any[] = JSON.parse(cartCookie);
+        setCartItems(parsedCart);
+      } else {
+        setCartItems([]); // No cookie found, initialize as empty
       }
-    };
-
-    loadCartFromCookie();
-
-    // Example: Set a dummy cart cookie for testing if it doesn't exist
-    // In a real app, the cart would be populated from user actions.
-    if (!Cookies.get('cart')) {
-      const dummyCart = [
-        { id: '1', name: 'Product A', price: 29.99, quantity: 1, imageUrl: 'https://placehold.co/100x100/A7F3D0/065F46?text=Product+A' },
-        { id: '2', name: 'Product B', price: 49.50, quantity: 2, imageUrl: 'https://placehold.co/100x100/FEE2E2/991B1B?text=Product+B' },
-        { id: '3', name: 'Product C', price: 10.00, quantity: 1, imageUrl: 'https://placehold.co/100x100/DBEAFE/1E40AF?text=Product+C' },
-      ];
-      Cookies.set('cart', JSON.stringify(dummyCart), { expires: 7 }); // Expires in 7 days
-      // Reload cart after setting dummy data
-      loadCartFromCookie();
+    } catch (e) {
+      console.error("Failed to parse cart cookie:", e);
+      setError("Failed to load cart. It might be corrupted.");
+      setCartItems([]);
+    } finally {
+      setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    loadCartFromCookie();
+
+    // Add a listener for the 'cartUpdated' event
+    const handleCartUpdate = () => {
+      loadCartFromCookie();
+    };
+
+    window.addEventListener('cartUpdated', handleCartUpdate);
+
+    // Remove the listener when the component unmounts
+    return () => {
+      window.removeEventListener('cartUpdated', handleCartUpdate);
+    };
+  }, [loadCartFromCookie]);
+
+
+  // --- Function to remove an item from the cart ---
+  const handleRemoveItem = (itemToRemove: any) => {
+    // Determine the unique identifier for the item
+    const itemIdentifier = itemToRemove.variantDocId
+      ? `${itemToRemove.productDocId}-${itemToRemove.variantDocId}`
+      : itemToRemove.productDocId;
+
+    // Filter items to remove the selected one
+    const updatedCart = cartItems.filter(item => {
+      const currentIdentifier = item.variantDocId
+        ? `${item.productDocId}-${item.variantDocId}`
+        : item.productDocId;
+      return currentIdentifier !== itemIdentifier;
+    });
+
+    // Update state and cookie
+    setCartItems(updatedCart);
+    Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+
+    // Notify other components that the cart has been updated
+    window.dispatchEvent(new Event('cartUpdated'));
+    console.log("Item removed, cart updated:", updatedCart);
+  };
+
+  // --- Functions to calculate totals ---
+  const totalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const totalPrice = cartItems.reduce((acc, item) => acc + (item.productPrice * item.quantity), 0).toFixed(2);
+
 
   if (loading) {
     return (
@@ -70,64 +93,74 @@ export default function CartPage() {
   }
 
   return (
-    <div className="w-full h-screen font-inter"> {/* Aggiunto font-inter per una migliore estetica */}
+    <div className="w-full min-h-screen font-inter bg-gray-50">
       <PublicHeader />
 
-      <div className="flex mt-6 p-2 pt-0 lg:p-8 gap-16 w-full">
-
-        {/* Main Content Area for Cart Items */}
-        <div className="flex flex-col items-center mt-6 p-2 pt-0 lg:p-8 w-full h-full bg-teal-800">
-          <h1 className="text-4xl font-bold text-white mb-8">Cart</h1>
+      <div className="flex justify-center mt-6 p-2 pt-0 lg:p-8 w-full h-lvh-screen">
+        <div className="flex flex-col items-center w-full max-w-7xl h-full">
+          <h1 className="text-4xl font-bold text-gray-800 mb-8">Your Cart</h1>
 
           {cartItems.length === 0 ? (
-            <div className="bg-white p-8 rounded-lg shadow-lg text-center">
-              <p className="text-xl text-gray-600 mb-4">Your cart is empty.</p>
-              <button
-                onClick={() => alert('Navigate to home page')} // Placeholder for navigation
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300 ease-in-out shadow-md"
-              >
-                Start Shopping
-              </button>
+            <div className="bg-white p-8 rounded-lg shadow-lg text-center w-full max-w-md min-h-1/2">
+              <p className="text-xl text-gray-600 mb-8">Your cart is empty.</p>
+              <a href="/" className="px-6 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition duration-300 ease-in-out shadow-md">Add items to Cart</a>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 w-full max-w-6xl">
-              {cartItems.map((item) => (
-                <div key={item.id} className="bg-white rounded-lg shadow-lg lg:p-6 p-2 flex flex-col transition-transform transform hover:scale-105 duration-300 ease-in-out relative">
+            <div className="grid grid-cols-1 gap-6 w-full">
+              {cartItems.map((item) => {
+                // Create a unique key for each item, which is essential for React
+                const itemKey = item.variantDocId ? `${item.productDocId}-${item.variantDocId}` : item.productDocId;
 
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">{item.productName}</h2>
-                  {item.hasVariant == true && (
-                    <p className="text-gray-600 mb-2">Variant: {item.variantName}</p>
-                  )}
-                  <p className="text-gray-600 mb-1">Price: ${item.price.toFixed(2)}</p>
-                  <p className="text-gray-600 mb-4">Quantity: {item.quantity}</p>
-                  <p className="text-right text-red-500 cursor-pointer block lg:hidden" onClick={() => alert(`Removed ${item.productName} from cart`)}>Remove</p>
-                  <p className="text-lg font-bold text-teal-700 text-right">Total: ${(item.price * item.quantity).toFixed(2)}</p>
-                  <div className="absolute top-4 right-4 hidden lg:block">
-                    <Trash2 className="text-gray-600 hover:text-red-500 cursor-pointer" onClick={() => alert(`Removed ${item.productName} from cart`)} />
+                return (
+                  <div key={itemKey} className="bg-white rounded-lg shadow-md p-4 flex flex-col sm:flex-row sm:items-center gap-4 transition-shadow hover:shadow-xl relative">
+
+                    {/* Item Details */}
+                    <div className="flex-grow">
+                      <h2 className="text-xl font-semibold text-gray-800">{item.productName}</h2>
+                      {item.hasVariant && (
+                        <div className="text-gray-500 text-sm">
+               
+                          <p className='font-medium mb-2'>{item.variantName}</p>
+                          <p>{item.selectedSize && `Size: ${item.selectedSize}`}</p>
+                          <p> {item.selectedColor && `Color: ${item.selectedColor}`}</p>
+                          <p> {item.selectedMaterial && `Material: ${item.selectedMaterial}`}</p>
+                        </div>
+                      )}
+                      <p className="text-gray-600 mt-2">Price: ${item.productPrice.toFixed(2)}</p>
+                      <p className="text-gray-600">Quantity: {item.quantity}</p>
+                    </div>
+
+                    {/* Total and Remove Button */}
+                    <div className="flex flex-col items-end justify-between self-stretch mt-4 sm:mt-0">
+                      <p className="text-lg font-bold text-teal-700">Total: ${(item.productPrice * item.quantity).toFixed(2)}</p>
+                      <button onClick={() => handleRemoveItem(item)} className="text-gray-500 hover:text-red-600 transition-colors mt-2 flex items-center gap-1">
+                        <Trash2 size={18} />
+                        <span>Remove</span>
+                      </button>
+                    </div>
                   </div>
-
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
           {cartItems.length > 0 && (
-            <div className="mt-10 bg-white p-8 rounded-lg shadow-lg w-full  max-w-6xl text-center">
+            <div className="mt-10 bg-white p-8 rounded-lg shadow-lg w-full text-center">
               <h3 className="text-2xl font-bold text-gray-800 mb-4">Summary</h3>
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-2 text-lg">
                 <span className="text-gray-700">Number of items:</span>
-                <span className="font-semibold text-gray-800">{cartItems.reduce((acc, item) => acc + item.quantity, 0)}</span>
+                <span className="font-semibold text-gray-800">{totalItems}</span>
               </div>
               <div className="flex justify-between items-center border-t pt-4 mt-4">
                 <span className="text-xl font-bold text-gray-800">Total:</span>
-                <span className="text-xl font-bold text-teal-700">${cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0).toFixed(2)}</span>
+                <span className="text-xl font-bold text-teal-700">${totalPrice}</span>
               </div>
-              <button
-                onClick={() => alert('Proceed to checkout')} // Placeholder for checkout functionality
-                className="mt-6 px-8 py-4 bg-green-600 text-white text-lg font-semibold rounded-md hover:bg-green-700 transition duration-300 ease-in-out shadow-lg"
+              <Link
+                href={"/checkout"}
+                className="mt-6 w-full max-w-xs px-8 py-4 bg-teal-600 text-white text-lg font-semibold rounded-md hover:bg-teal-700 transition duration-300 ease-in-out shadow-lg"
               >
                 Checkout
-              </button>
+              </Link>
             </div>
           )}
         </div>

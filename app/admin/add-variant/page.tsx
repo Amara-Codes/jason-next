@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import ColorPickerButton from "@/components/color-picker-button";
 import {
     Select,
     SelectContent,
@@ -42,7 +43,7 @@ const AddProductVariant = () => {
     // Variant options states (materials, sizes, colors)
     const [materials, setMaterials] = useState<{ id: string; label: string }[]>([]);
     const [sizes, setSizes] = useState<{ id: string; label: string }[]>([]);
-    const [colors, setColors] = useState<{ id: string; label: string }[]>([]);
+    const [colors, setColors] = useState<{ id: string; name: string; image: string }[]>([]);
 
     // Selected variant options
     const [selectedMaterialId, setSelectedMaterialId] = useState<string | null>(null);
@@ -138,7 +139,7 @@ const AddProductVariant = () => {
                 const [materialsRes, sizesRes, colorsRes] = await Promise.all([
                     fetch(`${STRAPI_URL}/materials`),
                     fetch(`${STRAPI_URL}/sizes`),
-                    fetch(`${STRAPI_URL}/colors`),
+                    fetch(`${STRAPI_URL}/colors?populate=*`),
                 ]);
 
                 if (!materialsRes.ok) throw new Error(`Failed to fetch materials: ${materialsRes.statusText}`);
@@ -149,9 +150,12 @@ const AddProductVariant = () => {
                 const sizesData = await sizesRes.json();
                 const colorsData = await colorsRes.json();
 
+                console.log(colorsData.data.map((i: any)=>({color: JSON.stringify(i.image.formats.thumbnail.url)}))); // Debugging: Log the colors data to check structure
+
+
                 setMaterials(materialsData.data.map((item: any) => ({ id: item.id.toString(), label: item.name })));
                 setSizes(sizesData.data.map((item: any) => ({ id: item.id.toString(), label: item.name })));
-                setColors(colorsData.data.map((item: any) => ({ id: item.id.toString(), label: item.name })));
+                setColors(colorsData.data.map((item: any) => ({ id: item.id.toString(), name: item.name, image: item.image?.formats?.thumbnail?.url ?? "" }))); // Ensure image URL is set correctly
 
             } catch (err: any) {
                 setError(err.message);
@@ -450,19 +454,13 @@ const AddProductVariant = () => {
                                     </div>
 
                                     <div className="flex-1">
-                                        <Label className="text-lg mb-2 block">Color</Label>
-                                        <Select value={selectedColorId || ""} onValueChange={setSelectedColorId}>
-                                            <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select Color" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {colors.map((color) => (
-                                                    <SelectItem key={color.id} value={color.id}>
-                                                        {color.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                  <Label className="text-lg mb-2 block">Color</Label>
+                                        {/* Use the new ColorPickerButton here */}
+                                        <ColorPickerButton
+                                            colors={colors}
+                                            selectedColorId={selectedColorId}
+                                            onSelectColor={setSelectedColorId}
+                                        />
                                     </div>
 
                                     <div className="flex-1">

@@ -6,6 +6,7 @@ import Cookies from "js-cookie"; // Importa js-cookie per gestire i cookie
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Plus, Minus, ShoppingCart } from "lucide-react"; // Icone per quantità e carrello
 import {
     Select,
@@ -14,6 +15,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+
+// Import the new ColorPickerButton component
+import ColorPickerButton from "@/components/color-picker-button";
+import { is, se } from "date-fns/locale";
+import { set } from "date-fns";
+import { json } from "stream/consumers";
 
 // --- TIPI DI DATI (con any come richiesto) ---
 type Product = any;
@@ -32,6 +39,9 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     // Stato per gestire le quantità per ogni prodotto/variante
     const [quantities, setQuantities] = useState<{ [key: string]: number }>({});
 
+    const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+    const [addingProductDocId, setAddingProductDocId] = useState<string | null>(null);
+
     // Nuovo stato per tenere traccia della variante selezionata per ogni prodotto.
     const [selectedOptions, setSelectedOptions] = useState<{
         [productDocId: string]: {
@@ -41,10 +51,16 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         };
     }>({});
 
+    // Nuovo stato per tutti i colori disponibili (per il ColorPickerButton)
+    const [allColors, setAllColors] = useState<{ id: string; name: string; image: string }[]>([]);
+
+
     const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337/api";
+    // Aggiunto per costruire correttamente gli URL delle immagini
+
 
     // --- Helper function to get unique options for a given key (size, color, material) ---
-    const getUniqueOptions = (variants: ProductVariant[], key: 'size' | 'color' | 'material', filters: { size?: string | null, color?: string | null, material?: string | null }) => {
+    const getUniqueOptions = useCallback((variants: ProductVariant[], key: 'size' | 'color' | 'material', filters: { size?: string | null, color?: string | null, material?: string | null }) => {
         const filteredVariants = variants.filter(variant => {
             let match = true;
             // Ensure variant[key] exists and is not null before comparison
@@ -56,7 +72,35 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         // Filter out null/undefined values before creating a Set
         const options = Array.from(new Set(filteredVariants.map(variant => variant[key]).filter(Boolean)));
         return options.sort(); // Sort for consistent order
-    };
+    }, []);
+
+    // ---
+    // 🌍 Fetch di TUTTI i colori disponibili (per il ColorPickerButton)
+    // ---
+    useEffect(() => {
+        const fetchAllColors = async () => {
+            try {
+                // Popola l'immagine per i colori per ottenere l'URL della thumbnail
+                const colorsResponse = await fetch(`${STRAPI_URL}/colors?populate=*`);
+                if (!colorsResponse.ok) {
+                    throw new Error(`Failed to fetch all colors: ${colorsResponse.statusText}`);
+                }
+                const colorsData = await colorsResponse.json();
+                const formattedColors = colorsData.data.map((item: any) => ({
+                    id: item.id.toString(),
+                    name: item.name,
+                    // Accedi all'URL dell'immagine tramite formats.thumbnail.url
+                    image: item.image?.formats?.thumbnail?.url ?? ''
+                }));
+                setAllColors(formattedColors);
+            } catch (err: any) {
+                console.error("Error fetching all colors for picker:", err);
+                // Non impostare l'errore globale qui, poiché i prodotti possono comunque essere caricati
+            }
+        };
+        fetchAllColors();
+    }, [STRAPI_URL]); // Dipendenze per fetchAllColors
+
 
     // ---
     // 🌍 Fetch dei prodotti basato sulla categoria selezionata
@@ -71,14 +115,13 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                 setError(null);
 
                 try {
-                    // Fetch products, populating product_variants to get their basic IDs
-                    // Assuming product_variants are directly nested, not under .data
-                    const productsResponse = await fetch(`${STRAPI_URL}/products?filters[categories][id][$eq]=${selectedCategory.id}&populate=product_variants`);
+                    // *** NON MODIFICATA LA TUA CHIAMATA FETCH ESISTENTE ***
+                    const productsResponse = await fetch(`${STRAPI_URL}/products?filters[categories][id][$eq]=${selectedCategory.id}&populate=*`);
                     if (!productsResponse.ok) {
                         throw new Error(`Failed to fetch products: ${productsResponse.statusText}`);
                     }
                     const productsData = await productsResponse.json();
-                    
+
                     const initialQuantities: { [key: string]: number } = {};
                     const initialSelectedOptions: {
                         [productDocId: string]: {
@@ -88,56 +131,51 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                         };
                     } = {};
 
-                    // Process each product to fetch detailed variant data if available
                     const fetchedProductsPromises = productsData.data.map(async (item: any) => {
                         const product = {
                             documentId: item.id, // Use 'id' from Strapi as documentId
                             ...item // Get all properties directly, no .attributes
                         };
 
-                        // Declare currentSize, currentColor, currentMaterial before use
                         let currentSize: string | null = null;
                         let currentColor: string | null = null;
                         let currentMaterial: string | null = null;
 
-                        // Check if product_variants exists and has items directly, not under .data
                         const hasVariants = product.product_variants && product.product_variants.length > 0;
-                        
-                        if (hasVariants) {
 
-                            // Fetch detailed data for each variant
+                        if (hasVariants) {
+                            // *** NON MODIFICATA LA TUA LOGICA DI FETCH VARIANTE ESISTENTE ***
                             const detailedVariantsPromises = product.product_variants.map(async (v: any) => {
                                 try {
-                                    // Use variant.documentId for the fetch
                                     const variantResponse = await fetch(`${STRAPI_URL}/product-variants/${v.documentId}?populate=*`);
                                     if (!variantResponse.ok) {
                                         console.error(`Failed to fetch detailed variant ${v.documentId}: ${variantResponse.statusText}`);
-                                        return null; // Return null for failed fetches
+                                        return null;
                                     }
                                     const detailedVariantData = await variantResponse.json();
                                     const variantItem = detailedVariantData.data; // Access data directly, no .attributes
 
-                                    // Flatten the nested color, material, size objects into direct properties
                                     return {
-                                        documentId: variantItem.documentId, // Use documentId from fetched item
+                                        documentId: variantItem.documentId,
                                         name: variantItem.name,
                                         price: variantItem.price,
                                         quantity: variantItem.quantity,
                                         minimum_quantity: variantItem.minimum_quantity,
-                                        size: variantItem.size?.name || null, // Access name directly
-                                        color: variantItem.color?.name || null, // Access name directly
-                                        material: variantItem.material?.name || null, // Access name directly
+                                        size: variantItem.size?.name || null,
+                                        color: variantItem.color?.name || null, // Mantenuto come stringa (nome del colore)
+                                        material: variantItem.material?.name || null,
+                                        sizeDocumentId: variantItem.size?.documentId || null,
+                                        colorDocumentId: variantItem.color?.documentId || null,
+                                        materialDocumentId: variantItem.material?.documentId || null,
                                     };
                                 } catch (variantFetchError) {
                                     console.error(`Error fetching detailed variant ${v.documentId}:`, variantFetchError);
-                                    return null; // Return null on error
+                                    return null;
                                 }
                             });
 
-                            // Wait for all detailed variant fetches to complete and filter out any nulls
                             product.product_variants = (await Promise.all(detailedVariantsPromises)).filter(Boolean);
 
-                            // Now populate initial options based on the fully detailed variants
                             const variantsForInitialPop = product.product_variants;
 
                             let selectedVariant: ProductVariant | null = null;
@@ -157,7 +195,6 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 currentMaterial = uniqueMaterials[0];
                             }
 
-                            // Find the exact variant based on auto-selected or default options
                             selectedVariant = variantsForInitialPop.find((v: ProductVariant) =>
                                 (currentSize ? v.size === currentSize : true) &&
                                 (currentColor ? v.color === currentColor : true) &&
@@ -168,7 +205,6 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 const key = `${product.documentId}-${selectedVariant.documentId}`;
                                 initialQuantities[key] = 1;
                             } else {
-                                // Fallback if no specific variant matches auto-selection, pick the first one with quantity > 0
                                 const firstAvailableVariant = variantsForInitialPop.find((v: ProductVariant) => v.quantity > 0);
                                 if (firstAvailableVariant) {
                                     currentSize = firstAvailableVariant.size || null;
@@ -178,12 +214,10 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                     const key = `${product.documentId}-${selectedVariant.documentId}`;
                                     initialQuantities[key] = 1;
                                 } else {
-                                    // If no variants are available, set quantity to 0
                                     initialQuantities[product.documentId] = 0;
                                 }
                             }
                         } else {
-                            // No variants, use product base quantity
                             initialQuantities[product.documentId] = 1;
                         }
 
@@ -192,12 +226,12 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                             color: currentColor,
                             material: currentMaterial,
                         };
-                        return product; // Return the modified product object
+                        return product;
                     });
 
-                    // Wait for all product processing (including nested variant fetches) to complete
                     const fetchedProducts = await Promise.all(fetchedProductsPromises);
-                    setProducts(fetchedProducts); // Set state with the modified products
+
+                    setProducts(fetchedProducts);
                     setQuantities(initialQuantities);
                     setSelectedOptions(initialSelectedOptions);
 
@@ -216,30 +250,33 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         };
 
         fetchProductsByCategory();
-    }, [selectedCategory, STRAPI_URL]);
+    }, [selectedCategory, STRAPI_URL, getUniqueOptions]); // Aggiunto getUniqueOptions alle dipendenze
+
 
     // ---
     // Get product or variant details (price, stock, quantity, min_quantity, key)
     // ---
     const getProductOrVariantDetails = useCallback((product: Product) => {
-        // Use the already fetched and flattened variants data directly, no .data
         const hasVariants = product.product_variants && product.product_variants.length > 0;
         const variantsData = hasVariants ? product.product_variants : [];
 
-        let currentPrice = product.price; // Default to product's base price
-        let currentStock = product.quantity; // Default to product's base quantity
-        let currentMinimumQuantity = product.minimum_quantity; // Default to product's base minimum quantity
+        let currentPrice = product.price;
+        let currentStock = product.quantity;
+        let currentMinimumQuantity = product.minimum_quantity;
         let selectedVariantDocId: string | null = null;
         let selectedVariantName: string = '';
         let matchedVariant: ProductVariant | null = null;
+        // Aggiunto per passare l'oggetto colore completo al ColorPickerButton
+        let selectedColorObject: { id: string; name: string; image: string } | null = null;
+
 
         if (hasVariants) {
             const currentProductOptions = selectedOptions[product.documentId] || { size: null, color: null, material: null };
 
-            // Find the variant that matches all selected options
             matchedVariant = variantsData.find((variant: ProductVariant) => {
                 return (
                     (currentProductOptions.size === null || variant.size === currentProductOptions.size) &&
+                    // La tua logica originale usa variant.color come stringa (nome)
                     (currentProductOptions.color === null || variant.color === currentProductOptions.color) &&
                     (currentProductOptions.material === null || variant.material === currentProductOptions.material)
                 );
@@ -250,9 +287,12 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                 currentStock = matchedVariant.quantity;
                 currentMinimumQuantity = matchedVariant.minimum_quantity || product.minimum_quantity;
                 selectedVariantDocId = matchedVariant.documentId;
-                selectedVariantName = matchedVariant.name; // Use variant name if available
+                selectedVariantName = matchedVariant.name;
+
+                // Trova l'oggetto colore completo da allColors basandoti sul nome del colore della variante
+                selectedColorObject = allColors.find(color => color.name === matchedVariant.color) || null;
+
             } else {
-                // If no exact match, try to find the first variant that matches available options
                 const partiallyMatchedVariant = variantsData.find((variant: ProductVariant) => {
                     return (
                         (currentProductOptions.size === null || variant.size === currentProductOptions.size) &&
@@ -265,15 +305,16 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                     currentMinimumQuantity = partiallyMatchedVariant.minimum_quantity || product.minimum_quantity;
                     selectedVariantDocId = partiallyMatchedVariant.documentId;
                     selectedVariantName = partiallyMatchedVariant.name;
+                    selectedColorObject = allColors.find(color => color.name === partiallyMatchedVariant.color) || null;
                 }
             }
         }
 
         const key = selectedVariantDocId ? `${product.documentId}-${selectedVariantDocId}` : product.documentId;
-        const currentQuantity = quantities[key] || 1; // La quantità è legata alla chiave specifica (prodotto o prodotto-variante)
+        const currentQuantity = quantities[key] || 1;
 
-        return { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, selectedVariantName, matchedVariant };
-    }, [quantities, selectedOptions]);
+        return { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, selectedVariantName, matchedVariant, selectedColorObject };
+    }, [quantities, selectedOptions, allColors]); // Aggiunto allColors alle dipendenze
 
 
     // ---
@@ -304,34 +345,57 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     // Gestione della selezione della variante
     // ---
     const handleOptionChange = useCallback((productDocId: string, optionType: 'size' | 'color' | 'material', value: string) => {
-        setSelectedOptions((prevSelected) => {
-            const currentOptions = { ...prevSelected[productDocId] };
+        const product = products.find(p => p.documentId === productDocId);
+        if (!product || !product.product_variants) return;
+        const variants = product.product_variants;
 
-            // Reset subsequent options if a higher-level option changes
+        setSelectedOptions(prevSelected => {
+            // Crea una copia dello stato per garantirne l'immutabilità
+            const newSelectedOptions = { ...prevSelected };
+            const currentOptions = { ...newSelectedOptions[productDocId] };
+
+            // 1. Aggiorna l'opzione che l'utente ha modificato
+            currentOptions[optionType] = value;
+
+            // 2. Se è cambiata la TAGLIA, resetta e auto-seleziona colore e materiale
             if (optionType === 'size') {
                 currentOptions.color = null;
                 currentOptions.material = null;
-            } else if (optionType === 'color') {
+
+                // Trova i colori disponibili per la nuova taglia
+                const availableColors = getUniqueOptions(variants, 'color', { size: value });
+                if (availableColors.length > 0) {
+                    const newColor = availableColors[0]; // Auto-seleziona il primo colore
+                    currentOptions.color = newColor;
+
+                    // In base alla taglia e al nuovo colore, trova i materiali disponibili
+                    const availableMaterials = getUniqueOptions(variants, 'material', { size: value, color: newColor });
+                    if (availableMaterials.length > 0) {
+                        currentOptions.material = availableMaterials[0]; // Auto-seleziona il primo materiale
+                    }
+                }
+            }
+            // 3. Se è cambiato il COLORE, resetta e auto-seleziona il materiale
+            else if (optionType === 'color') {
                 currentOptions.material = null;
+
+                // Trova i materiali disponibili per la taglia e il nuovo colore
+                const availableMaterials = getUniqueOptions(variants, 'material', { size: currentOptions.size, color: value });
+                if (availableMaterials.length > 0) {
+                    currentOptions.material = availableMaterials[0]; // Auto-seleziona il primo materiale
+                }
             }
 
-            currentOptions[optionType] = value;
-            return {
-                ...prevSelected,
-                [productDocId]: currentOptions,
-            };
+            // 4. Aggiorna lo stato del prodotto con le nuove opzioni
+            newSelectedOptions[productDocId] = currentOptions;
+            return newSelectedOptions;
         });
 
-        // Reset quantity to 1 for the new combination
-        const product = products.find(p => p.documentId === productDocId);
-        if (product) {
-            const { key } = getProductOrVariantDetails(product); // Recalculate key based on new selection
-            setQuantities(prev => ({ ...prev, [key]: 1 }));
-        }
-    }, [products, getProductOrVariantDetails]);
+    }, [products, getUniqueOptions]);
 
 
     const updateCartCookie = (itemToAdd: any) => {
+        console.log("Aggiornamento del carrello:", itemToAdd);
         let currentCart: any[] = [];
         const existingCartCookie = Cookies.get('cart'); // Legge il cookie con js-cookie
 
@@ -377,7 +441,6 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         const { currentPrice, currentStock, currentQuantity, key, selectedVariantDocId, selectedVariantName, matchedVariant } = getProductOrVariantDetails(product);
 
         if (currentQuantity <= 0) {
-            // Use a custom message box instead of alert()
             console.log("Seleziona una quantità valida.");
             return;
         }
@@ -386,11 +449,9 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
             return;
         }
 
-        // Check if product_variants exists and has items directly, not under .data
         const hasVariants = product.product_variants && product.product_variants.length > 0;
         const currentProductOptions = selectedOptions[product.documentId] || { size: null, color: null, material: null };
 
-        // Check if all necessary options are selected for a product with variants
         if (hasVariants) {
             const uniqueSizes = getUniqueOptions(product.product_variants, 'size', {});
             const uniqueColors = getUniqueOptions(product.product_variants, 'color', { size: currentProductOptions.size });
@@ -415,26 +476,46 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
         }
 
 
+        console.log(product, '========')
+        setAddingProductDocId(product.documentId); // Imposta l'ID del prodotto in fase di aggiunta
+        setIsAddingToCart(true)
+     
         const itemToAdd = {
             productDocId: product.documentId,
             productName: product.name,
             hasVariant: hasVariants,
             variantDocId: selectedVariantDocId,
             variantName: selectedVariantName,
-            price: currentPrice,
+            productPrice: currentPrice,
             quantity: currentQuantity,
-            // Include selected options for clarity in cart
             selectedSize: currentProductOptions.size,
             selectedColor: currentProductOptions.color,
             selectedMaterial: currentProductOptions.material,
+            sizeDocumentId: "",
+            colorDocumentId: "",
+            materialDocumentId: "",
+            genderDocumentId: product.genders.map((e: any) => e.documentId).join(", ") || [],
         };
+        console.log(product)
+        if(hasVariants){
+            const variant = product.product_variants.filter((e: any) => e.documentId === selectedVariantDocId)[0];
+            itemToAdd.sizeDocumentId = variant.sizeDocumentId;
+            itemToAdd.materialDocumentId = variant.materialDocumentId;
+            itemToAdd.colorDocumentId = variant.colorDocumentId
+        }
 
-        updateCartCookie(itemToAdd); // Aggiorna il cookie del carrello
-        // Optional: Resetta la quantità del prodotto/variante a 1 dopo averlo aggiunto
+        console.log(itemToAdd)
+        updateCartCookie(itemToAdd);
         setQuantities((prevQuantities) => ({
             ...prevQuantities,
             [key]: 1
         }));
+
+        setTimeout(() => {
+            setAddingProductDocId("");
+            setIsAddingToCart(false);
+          
+        }, 1000);
     };
 
     // ---
@@ -443,7 +524,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     if (!selectedCategory) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-xl text-center p-4 w-full">
-                Seleziona una categoria per visualizzare i prodotti.
+                Choose a Category to view products.
             </div>
         );
     }
@@ -451,7 +532,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     if (loading) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-2xl w-full">
-                Caricamento prodotti... ⏳
+                Loading products... ⏳
             </div>
         );
     }
@@ -459,7 +540,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-red-800 text-white text-2xl text-center p-4 w-full">
-                Errore durante il caricamento dei prodotti: {error}. Riprova. 🚨
+                <p>Error loading products: {error}. Please try again. 🚨</p>
             </div>
         );
     }
@@ -469,27 +550,30 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
     // ---
     return (
         <div className="flex flex-col gap-y-8 items-center min-h-screen bg-teal-800 w-full p-4 rounded-md">
-            <h2 className="text-center text-2xl font-bold text-white">Prodotti - {selectedCategory.label.toUpperCase()}</h2>
+            <h2 className="text-center text-2xl font-bold text-white">{selectedCategory.label.toUpperCase()}</h2>
             {products.length === 0 && !loading && !error && (
-                <p className="text-white text-lg w-full">Nessun prodotto trovato per questa categoria.</p>
+                <p className="text-white text-lg w-full">No products found for this category.</p>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full min-w-full">
                 {products.map((product: any) => {
-                    // Check if product_variants exists and has items directly, not under .data
                     const hasVariants = product.product_variants && product.product_variants.length > 0;
-                    // variantsData now directly contains the flattened variant objects
                     const variantsData = hasVariants ? product.product_variants : [];
 
-                    const { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, matchedVariant } = getProductOrVariantDetails(product);
+                    const { currentPrice, currentStock, currentQuantity, currentMinimumQuantity, key, selectedVariantDocId, matchedVariant, selectedColorObject } = getProductOrVariantDetails(product);
                     const currentProductOptions = selectedOptions[product.documentId] || { size: null, color: null, material: null };
 
                     const availableSizes = hasVariants ? getUniqueOptions(variantsData, 'size', {}) : [];
-                    const availableColors = hasVariants ? getUniqueOptions(variantsData, 'color', { size: currentProductOptions.size }) : [];
+                    // Filtra `allColors` basandosi sui nomi dei colori disponibili per la variante corrente
+                    const availableColorsForPicker = allColors.filter(globalColor =>
+                        variantsData.some((variant: any) =>
+                            variant.color === globalColor.name && // Confronta il nome del colore della variante con il nome del colore globale
+                            (currentProductOptions.size === null || variant.size === currentProductOptions.size)
+                        )
+                    );
                     const availableMaterials = hasVariants ? getUniqueOptions(variantsData, 'material', { size: currentProductOptions.size, color: currentProductOptions.color }) : [];
 
-                    // Determine if the "Add to Cart" button should be disabled
-                    const isAddToCartDisabled = currentStock <= 0 || currentQuantity <= 0 || (hasVariants && !matchedVariant);
+                    const isAddToCartDisabled = currentStock <= 0 || currentQuantity <= 0 || (hasVariants && !matchedVariant) || currentProductOptions.size === null || currentProductOptions.color === null || currentProductOptions.material === null;
 
                     return (
                         <Card key={product.documentId} className="bg-teal-700 p-4 rounded-lg shadow-lg flex flex-col justify-between">
@@ -497,19 +581,16 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 <h3 className="font-semibold text-xl mb-2">{product.name}</h3>
                                 {hasVariants && (
                                     <div className="mb-4 space-y-2">
-                                        {/* Display product.peppe if it exists */}
-
-                                        {/* Size Select */}
                                         {availableSizes.length > 0 && (
                                             <Select
                                                 value={currentProductOptions.size || ''}
                                                 onValueChange={(value) => handleOptionChange(product.documentId, 'size', value)}
                                                 disabled={currentStock <= 0}
                                             >
-                                                <SelectTrigger className="w-full bg-teal-600 text-white border-teal-500 focus:border-white">
+                                                <SelectTrigger className="w-full bg-teal-600 !text-white border-teal-500 focus:border-white">
                                                     <SelectValue placeholder="Select Size" />
                                                 </SelectTrigger>
-                                                <SelectContent className="bg-teal-600 text-white">
+                                                <SelectContent className="bg-teal-600 !text-white">
                                                     {availableSizes.map((size: string) => (
                                                         <SelectItem key={size} value={size} className="hover:bg-teal-500">
                                                             Size: {size}
@@ -519,34 +600,33 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                             </Select>
                                         )}
 
-                                        {/* Color Select */}
-                                        {availableColors.length > 0 && (
-                                            <Select
-                                                value={currentProductOptions.color || ''}
-                                                onValueChange={(value) => handleOptionChange(product.documentId, 'color', value)}
-                                                disabled={currentStock <= 0 || !currentProductOptions.size} // Disable if size not selected
-                                            >
-                                                <SelectTrigger className="w-full bg-teal-600 text-white border-teal-500 focus:border-white">
-                                                    <SelectValue placeholder="Select Color" />
-                                                </SelectTrigger>
-                                                <SelectContent className="bg-teal-600 text-white">
-                                                    {availableColors.map((color: string) => (
-                                                        <SelectItem key={color} value={color} className="hover:bg-teal-500">
-                                                            Color: {color}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                        {/* Sostituzione del Select per il colore con ColorPickerButton */}
+                                        {availableColorsForPicker.length > 0 && (
+                                            <div>
+                                                <Label className="text-lg mb-2 block">Color</Label>
+                                                <ColorPickerButton
+                                                    colors={availableColorsForPicker}
+                                                    selectedColorId={selectedColorObject?.id || null}
+                                                    onSelectColor={(colorId) => {
+                                                        const selectedColor = allColors.find(c => c.id === colorId);
+                                                        // Passa il nome del colore a handleOptionChange, come richiesto dalla tua logica esistente
+                                                        handleOptionChange(product.documentId, 'color', selectedColor?.name || '');
+                                                    }}
+                                                    disabled={currentStock <= 0 || !currentProductOptions.size}
+                                                />
+                                            </div>
                                         )}
 
-                                        {/* Material Select */}
                                         {availableMaterials.length > 0 && (
+
+
+
                                             <Select
                                                 value={currentProductOptions.material || ''}
                                                 onValueChange={(value) => handleOptionChange(product.documentId, 'material', value)}
-                                                disabled={currentStock <= 0 || !currentProductOptions.size || !currentProductOptions.color} // Disable if size or color not selected
+                                                disabled={currentStock <= 0 || !currentProductOptions.size || !currentProductOptions.color}
                                             >
-                                                <SelectTrigger className="w-full bg-teal-600 text-white border-teal-500 focus:border-white">
+                                                <SelectTrigger className="w-full bg-teal-600 !text-white border-teal-500 focus:border-white">
                                                     <SelectValue placeholder="Select Material" />
                                                 </SelectTrigger>
                                                 <SelectContent className="bg-teal-600 text-white">
@@ -557,6 +637,7 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+
                                         )}
                                     </div>
                                 )}
@@ -567,7 +648,13 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                     <p className="text-sm opacity-80">pcs</p>
                                 </div>
                             </div>
-                            <div className="flex items-center justify-between gap-2 mt-auto">
+                            {currentStock <= 0 && (
+                                <p className="text-red-300 text-sm text-center mt-2">Out of stock</p>
+                            )}
+                            {hasVariants && !matchedVariant && currentStock > 0 && (
+                                <p className="text-yellow-300 text-sm text-center mt-2">Select all variant options.</p>
+                            )}
+                            <div className="flex items-center justify-between gap-2 mt-auto flex-wrap">
                                 <Button
                                     variant="outline"
                                     size="icon"
@@ -595,21 +682,17 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 >
                                     <Plus className="h-4 w-4" />
                                 </Button>
+                                
                                 <Button
                                     onClick={() => handleAddToCart(product)}
-                                    className="flex-1 ml-4 bg-emerald-900 text-white hover:bg-emerald-700"
-                                    disabled={isAddToCartDisabled}
+                                    className="flex-1 ml-0 lg:ml-4 bg-emerald-900 text-white hover:bg-emerald-700 mt-8 lg:mt-0"
+                                    disabled={isAddToCartDisabled || (isAddingToCart && addingProductDocId == product.documentId)}
                                 >
+                               
                                     <ShoppingCart className="h-4 w-4 mr-2" />
-                                    Add
+                                    {isAddingToCart && addingProductDocId === product.documentId ? 'Adding...' : 'Add to Cart'}
                                 </Button>
                             </div>
-                            {currentStock <= 0 && (
-                                <p className="text-red-300 text-sm text-center mt-2">Out of stock</p>
-                            )}
-                            {hasVariants && !matchedVariant && currentStock > 0 && (
-                                <p className="text-yellow-300 text-sm text-center mt-2">Select all variant options.</p>
-                            )}
                         </Card>
                     );
                 })}
