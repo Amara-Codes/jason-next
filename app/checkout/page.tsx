@@ -100,54 +100,69 @@ export default function CheckoutPage() {
     };
 
     // --- MODIFIED: handlePayment function to create order in Strapi ---
- const handlePayment = async () => {
-    if (!customerEmail || cartItems.length === 0 || !operator) {
-        alert("Please fill in the customer email. An operator must be logged in.");
-        return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-        // Prepare the payload for your own API route
-        const payload = {
-            cartItems,
-            customerEmail,
-            paymentMethod,
-            total,
-            subtotal,
-            appliedDiscount,
-            operator, // Send operator info to the backend
-        };
-
-
-        console.log('prima di chimare api interna:', payload)
-        // Call your own Next.js API route. The browser will send the HttpOnly cookie automatically.
-        const response = await fetch('/api/create-order', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to create order.');
+    const handlePayment = async () => {
+        if (!customerEmail || cartItems.length === 0 || !operator) {
+            alert("Please fill in the customer email. An operator must be logged in.");
+            return;
         }
 
-        // SUCCESS: Clear cart and redirect
-        alert('Order created successfully!');
-        Cookies.remove('cart');
-        router.push('/'); // Redirect to homepage or a success page
+        setIsSubmitting(true);
 
-    } catch (error: any) {
-        console.error('An error occurred during payment processing:', error);
-        alert(`Error: ${error.message}`);
-    } finally {
-        setIsSubmitting(false);
-    }
-};
+        try {
+            // Prepare the payload for your own API route
+            const payload = {
+                cartItems,
+                customerEmail,
+                paymentMethod,
+                total,
+                subtotal,
+                appliedDiscount,
+                operator, // Send operator info to the backend
+            };
+
+
+            console.log('prima di chimare api interna:', payload)
+            // Call your own Next.js API route. The browser will send the HttpOnly cookie automatically.
+            const response = await fetch('/api/create-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to create order.');
+            }
+
+            cartItems.forEach(async item => {
+                const resp = await fetch('/api/update-quantities', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ productDocId: item.hasVariant ? item.variantDocId : item.productDocId, quantity: item.quantity, isVariant: item.hasVariant }),
+                });
+
+                if (!resp.ok) {
+                    const errorData = await resp.json();
+                    throw new Error(errorData.message || 'Failed to update quantities.');
+                }
+            });
+
+            // SUCCESS: Clear cart and redirect
+            alert('Order created successfully!');
+            Cookies.remove('cart');
+            router.push('/'); // Redirect to homepage or a success page
+
+        } catch (error: any) {
+            console.error('An error occurred during payment processing:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     if (loading || isOperatorLoading) {
         return (

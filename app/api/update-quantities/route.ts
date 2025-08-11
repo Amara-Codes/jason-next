@@ -28,6 +28,7 @@ export async function POST(request: NextRequest) {
     const { productDocId, quantity, isVariant } = await request.json();
 
     if (!productDocId || isVariant === undefined || quantity === undefined) {
+      console.log(productDocId, quantity, isVariant);
       return NextResponse.json({ message: 'Missing required data (productDocId, quantity, or isVariant).' }, { status: 400 });
     }
     
