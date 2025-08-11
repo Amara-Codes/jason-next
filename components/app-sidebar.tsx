@@ -37,7 +37,7 @@ const basic = [
     },
     {
         title: "Settings",
-        url: "/admin/settings",
+        url: "/admin/soon",
         icon: Settings,
     },
 ]

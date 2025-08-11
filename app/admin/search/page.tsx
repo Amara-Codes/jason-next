@@ -430,7 +430,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleEditProductClick(product)}
-                                            className="text-gray-600 hover:text-blue-600"
+                                            className="text-gray-600 hover:text-teal-600"
                                         >
                                             {/* <PencilIcon className="h-5 w-5" /> */}
                                             ✏️ Edit
@@ -521,7 +521,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                         {variantsOfProduct.length > 0 ? (
                             variantsOfProduct.map((variant) => (
                                 <Card key={variant.id} className="bg-gray-50 p-3 shadow-sm">
-                                    <CardContent className="p-0">
+                                    <CardContent className="p-0 flex flex-col">
                                         <p><strong>Name:</strong> {variant.name}</p>
                                         <p><strong>Price:</strong> ${variant.price?.toFixed(2)}</p>
                                         <p><strong>Quantity:</strong> {variant.quantity}</p>
@@ -532,7 +532,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                             variant="outline"
                                             size="sm"
                                             onClick={() => handleEditVariantClick(variant)}
-                                            className="mt-2 text-blue-600 hover:text-blue-700"
+                                            className="mt-2 ml-auto text-teal-600 hover:text-teal-700 border-teal-600 hover:border-teal-700"
                                         >
                                             Edit Variant
                                         </Button>

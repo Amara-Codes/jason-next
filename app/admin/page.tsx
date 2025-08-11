@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import LogoutButton from "@/components/logout-button";
-import Image from "next/image";
 
 export const metadata: Metadata = {
   title: "Jason - Admin",
@@ -22,10 +21,9 @@ export default function Home() {
 
       <div className="flex p-8 gap-16 w-full">
         {/* Main content area */}
-        <div className="bg-stone-800 p-8 grow text-white relative rounded-xl shadow-lg overflow-x-hidden"> {/* Reduced padding to p-8, added rounded corners and shadow */}
+        <div className="bg-teal-800 p-8 grow text-white relative rounded-xl shadow-lg overflow-x-hidden"> {/* Reduced padding to p-8, added rounded corners and shadow */}
 
-          {/* Text content div - Removed 'absolute' and 'z-20' */}
-          <div className="mt-8 text-lg gap-4 relative z-20 overflow-y-auto h-screen"> {/* Added relative, overflow-y-auto and max-h for potential long content */}
+          <div className="mt-8 text-lg gap-4 overflow-y-auto"> {/* Added relative, overflow-y-auto and max-h for potential long content */}
           <h1 className="text-4xl text-white font-bold text-center mb-8">Welcome to the Admin Dashboard</h1> {/* Added mb-8 for spacing */}
             <p className="mb-4">"Jason" is a classic name with Greek and Hebrew origins, meaning "healer". <br />
               It's also a prominent figure in Greek mythology, known as the leader of the Argonauts on their quest for the Golden Fleece. <br />
@@ -54,10 +52,6 @@ export default function Home() {
               Jason's quest involved battling monsters, navigating treacherous waters, and ultimately securing the Fleece with the help of the sorceress Medea.
               Their story is a popular subject in Greek literature and has been adapted into various films.
             </p>
-          </div>
-          {/* Image div - remains absolutely positioned behind the text */}
-          <div className="absolute left-0 -right-full top-0 bottom-0 z-10 rounded-xl overflow-hidden"> {/* Added rounded-xl and overflow-hidden to match parent */}
-            <Image src="/assets/img/bg.png" alt="Description of image" layout="fill" objectFit="contain" className="opacity-70" /> {/* Added opacity */}
           </div>
         </div>
       </div>

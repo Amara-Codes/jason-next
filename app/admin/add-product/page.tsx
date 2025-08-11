@@ -306,7 +306,7 @@ const AddProduct = () => {
                         <AlertDialogFooter>
                             <AlertDialogCancel onClick={handleCloseDialog}>Cancel</AlertDialogCancel>
                             <AlertDialogAction>
-                                <Link href="/add-variant" className="text-white hover:underline">
+                                <Link href="/admin/add-variant" className="text-white hover:underline">
 Add Variant
                                 </Link>
                             </AlertDialogAction>
