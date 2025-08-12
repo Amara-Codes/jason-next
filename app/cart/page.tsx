@@ -157,7 +157,7 @@ export default function CartPage() {
               </div>
               <Link
                 href={"/checkout"}
-                className="mt-6 w-full max-w-xs px-8 py-4 bg-teal-600 text-white text-lg font-semibold rounded-md hover:bg-teal-700 transition duration-300 ease-in-out shadow-lg"
+                className="mt-8 lg:mx-auto block w-full lg:max-w-xs px-8 py-4 bg-teal-600 text-white text-lg font-semibold rounded-md hover:bg-teal-700 transition duration-300 ease-in-out shadow-lg"
               >
                 Checkout
               </Link>

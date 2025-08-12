@@ -685,12 +685,17 @@ const ProductFetcher = ({ selectedCategory }: ProductFetcherProps) => {
                                 
                                 <Button
                                     onClick={() => handleAddToCart(product)}
-                                    className="flex-1 ml-0 lg:ml-4 bg-emerald-900 text-white hover:bg-emerald-700 mt-8 lg:mt-0"
+                                    className="flex-1 ml-0 lg:ml-4 bg-emerald-900 text-white hover:bg-emerald-700 mt-0"
                                     disabled={isAddToCartDisabled || (isAddingToCart && addingProductDocId == product.documentId)}
                                 >
                                
                                     <ShoppingCart className="h-4 w-4 mr-2" />
+                                    <span className="hidden lg:block">
+
                                     {isAddingToCart && addingProductDocId === product.documentId ? 'Adding...' : 'Add to Cart'}
+                                    </span>
+
+                                    <span className="lg:hidden">{isAddingToCart && addingProductDocId === product.documentId ? 'Adding...' : 'Add'}</span>
                                 </Button>
                             </div>
                         </Card>
