@@ -24,7 +24,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { se } from "date-fns/locale";
+import { Trash2 } from "lucide-react";
+import { min } from "date-fns";
 
 // Assuming you have an icon library like lucide-react installed
 // import { PencilIcon } from 'lucide-react';
@@ -67,11 +68,14 @@ const Search = () => {
     const [variantsOfProduct, setVariantsOfProduct] = useState<any[]>([]);
     const [isEditVariantModalOpen, setIsEditVariantModalOpen] = useState<boolean>(false);
     const [variantToEdit, setVariantToEdit] = useState<any>(null);
+    const [isDeleteProductModalOpen, setIsDeleteProductModalOpen] = useState<boolean>(false);
+    const [productToDelete, setProductToDelete] = useState<any>(null);
+    const [isDeleteVariantModalOpen, setIsDeleteVariantModalOpen] = useState<boolean>(false);
+    const [variantToDelete, setVariantToDelete] = useState<any>(null);
 
-
-const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState<boolean>(false);
-    const [successDialogTitle, setSuccessDialogTitle] = useState<string>("");   
-const [successDialogDescription, setSuccessDialogDescription] = useState<string>("");
+    const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState<boolean>(false);
+    const [successDialogTitle, setSuccessDialogTitle] = useState<string>("");
+    const [successDialogDescription, setSuccessDialogDescription] = useState<string>("");
 
     const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337/api";
     const STRAPI_API_TOKEN = process.env.NEXT_PUBLIC_STRAPI_API_TOKEN;
@@ -291,6 +295,80 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
         setIsEditVariantModalOpen(true);
     };
 
+    const handleDeleteProductClick = (product: any) => {
+        setProductToDelete(product);
+        setIsDeleteProductModalOpen(true);
+    };
+
+    const handleDeleteVariantClick = (variant: any) => {
+        setVariantToDelete(variant);
+        setIsDeleteVariantModalOpen(true);
+    };
+
+    const handleDeleteProduct = async () => {
+        if (!productToDelete) return;
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/delete-product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ documentId: productToDelete.documentId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete product: ${response.statusText}`);
+            }
+
+            setProducts(prevProducts => prevProducts.filter(p => p.documentId !== productToDelete.documentId));
+            setIsDeleteProductModalOpen(false);
+            setSuccessDialogTitle("Product Deleted Successfully");
+            setSuccessDialogDescription(`Product "${productToDelete.name}" has been deleted.`);
+            setIsSuccessDialogOpen(true);
+            setProductToDelete(null);
+        } catch (err: any) {
+            setError(err.message);
+            console.error("Error deleting product:", err);
+            alert(`Error deleting product: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleDeleteVariant = async () => {
+        if (!variantToDelete) return;
+
+        setLoading(true);
+        try {
+            const response = await fetch('/api/delete-variant', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ documentId: variantToDelete.documentId })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to delete variant: ${response.statusText}`);
+            }
+
+            setVariantsOfProduct(prevVariants => prevVariants.filter(v => v.documentId !== variantToDelete.documentId));
+            setIsDeleteVariantModalOpen(false);
+            setSuccessDialogTitle("Variant Deleted Successfully");
+            setSuccessDialogDescription(`Variant "${variantToDelete.name}" has been deleted.`);
+            setIsSuccessDialogOpen(true);
+            setVariantToDelete(null);
+        } catch (err: any) {
+            setError(err.message);
+            console.error("Error deleting variant:", err);
+            alert(`Error deleting variant: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     // ---
     // 💾 Handle Variant Update
     // ---
@@ -313,6 +391,9 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                         material: selectedMaterialId,
                         size: selectedSizeId,
                         color: selectedColorId,
+                        minimum_quantity: variantToEdit.minimum_quantity,
+                        jah_quantity: variantToEdit.jah_quantity,
+                        noik_quantity: variantToEdit.noik_quantity,
                     }
                 }),
             });
@@ -332,7 +413,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
             setIsEditVariantModalOpen(false);
             setIsVariantsModalOpen(false);
             setSuccessDialogTitle("Variant Updated Successfully");
-            setSuccessDialogDescription(`Variant "${variantToEdit.name}" has been updated successfully.`);      
+            setSuccessDialogDescription(`Variant "${variantToEdit.name}" has been updated successfully.`);
             setIsSuccessDialogOpen(true);
             setVariantToEdit(null);
             setSelectedMaterialId(null);
@@ -395,7 +476,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                         return (
                             <Card key={product.id} ref={lastProductElementRef} className="bg-white text-gray-800 shadow-lg relative pt-0 min-h-[320px]">
                                 <CardContent className="p-4 flex flex-col justify-between h-full">
-                                    <div className="flex justify-end">
+                                    <div className="flex justify-end mb-8">
 
                                         <Button
                                             variant="ghost"
@@ -406,9 +487,13 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                             {/* <PencilIcon className="h-5 w-5" /> */}
                                             ✏️ Edit
                                         </Button>
+
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick} className="text-gray-600 hover:text-red-600">
+                                            <Trash2 className="h-5 w-5" />
+                                            `</Button>
                                     </div>
                                     <div className="flex mb-2">
-                                        <h3 className="text-xl font-semibold">{product.name}</h3>
+                                        <h3 className="text-xl font-semibold uppercase">{product.name}</h3>
                                     </div>
                                     <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     <Button
@@ -424,7 +509,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                         return (
                             <Card key={product.id} className="bg-white text-gray-800 shadow-lg relative pt-0 min-h-[320px]">
                                 <CardContent className="p-4 flex flex-col justify-between h-full">
-                                 <div className="flex justify-end">
+                                    <div className="flex justify-end mb-8">
 
                                         <Button
                                             variant="ghost"
@@ -435,9 +520,13 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                             {/* <PencilIcon className="h-5 w-5" /> */}
                                             ✏️ Edit
                                         </Button>
+
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick(product)} className="text-red-600 hover:text-red-800">
+                                            <Trash2 className="h-5 w-5" />
+                                        </Button>
                                     </div>
                                     <div className="flex mb-2">
-                                        <h3 className="text-xl font-semibold">{product.name}</h3>
+                                        <h3 className="text-xl font-semibold uppercase">{product.name}</h3>
                                     </div>
                                     <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     <Button
@@ -525,17 +614,32 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                         <p><strong>Name:</strong> {variant.name}</p>
                                         <p><strong>Price:</strong> ${variant.price?.toFixed(2)}</p>
                                         <p><strong>Quantity:</strong> {variant.quantity}</p>
+                                        <p><strong>Min Quantity:</strong> {variant.minimum_quantity}</p>
+                                        <p><strong>Stock Quantity at Jah:</strong> {variant.jah_quantity}</p>
+                                        <p><strong>Stock Quantity at Shop 676:</strong> {variant.noik_quantity}</p>
                                         <p><strong>Material:</strong> {variant.material?.name || 'N/A'}</p>
                                         <p><strong>Size:</strong> {variant.size?.name || 'N/A'}</p>
                                         <p><strong>Color:</strong> {variant.color?.name || 'N/A'}</p>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleEditVariantClick(variant)}
-                                            className="mt-2 ml-auto text-teal-600 hover:text-teal-700 border-teal-600 hover:border-teal-700"
-                                        >
-                                            Edit Variant
-                                        </Button>
+                                        <div className="flex gap-x-2 justify-end">
+
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEditVariantClick(variant)}
+                                                className="mt-2  text-teal-600 hover:text-teal-700 border-teal-600 hover:border-teal-700"
+                                            >
+                                                Edit Variant
+                                            </Button>
+
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="mt-2  text-red-600 hover:text-red-700"
+                                                onClick={() => handleDeleteVariantClick(variant)}
+                                            >
+                                                <Trash2 className="h-5 w-5" />
+                                            </Button>
+                                        </div>
                                     </CardContent>
                                 </Card>
                             ))
@@ -596,6 +700,45 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                         className="col-span-3"
                                     />
                                 </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="variant-min-stock" className="text-right">
+                                        Min Quantity
+                                    </Label>
+                                    <Input
+                                        id="variant-min-stock"
+                                        type="number"
+                                        value={variantToEdit.minimum_quantity}
+                                        onChange={(e) => setVariantToEdit({ ...variantToEdit, minimum_quantity: parseInt(e.target.value) || 0 })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="variant-jah-stock" className="text-right">
+                                        Jah Quantity
+                                    </Label>
+                                    <Input
+                                        id="variant-jah-stock"
+                                        type="number"
+                                        value={variantToEdit.jah_quantity}
+                                        onChange={(e) => setVariantToEdit({ ...variantToEdit, jah_quantity: parseInt(e.target.value) || 0 })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+
+                                             <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="variant-noik-stock" className="text-right">
+                                        676 Quantity
+                                    </Label>
+                                    <Input
+                                        id="variant-noik-stock"
+                                        type="number"
+                                        value={variantToEdit.noik_quantity}
+                                        onChange={(e) => setVariantToEdit({ ...variantToEdit, noik_quantity: parseInt(e.target.value) || 0 })}
+                                        className="col-span-3"
+                                    />
+                                </div>
+
+
                                 {/* Size Select */}
                                 <div className="grid grid-cols-4 items-center gap-4">
                                     <Label htmlFor="variant-size" className="text-right col-span-1">Size</Label>
@@ -645,7 +788,7 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                 </div>
                                 {/* Material Select */}
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-material" className="text-right">Material {variantToEdit.material?.id}</Label>
+                                    <Label htmlFor="variant-material" className="text-right">Material</Label>
                                     <Select
                                         value={variantToEdit.material?.id || ""}
                                         onValueChange={(value) => {
@@ -693,6 +836,38 @@ const [successDialogDescription, setSuccessDialogDescription] = useState<string>
                                 Close
                             </AlertDialogCancel>
                         )}
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={isDeleteProductModalOpen} onOpenChange={setIsDeleteProductModalOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete
+
+                            <strong> {productToDelete?.name.toUpperCase()}</strong>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsDeleteProductModalOpen(false)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProduct}>Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={isDeleteVariantModalOpen} onOpenChange={setIsDeleteVariantModalOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Variant</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete the variant
+                            <strong> {variantToDelete?.name.toUpperCase()}</strong>?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setIsDeleteVariantModalOpen(false)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteVariant}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

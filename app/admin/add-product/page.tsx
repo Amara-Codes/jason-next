@@ -9,6 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {     Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue } from "@/components/ui/select";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -237,29 +242,25 @@ const AddProduct = () => {
                         <div className="flex flex-col md:flex-row justify-between gap-6">
                             {/* Gender Checkboxes */}
                             <div className="flex-1">
+
+                      
+
                                 <Label className="text-lg">Gender</Label>
                                 <p className="text-sm text-gray-500 mb-4">
                                     Select the applicable genders
                                 </p>
-                                <div className="space-y-2">
-                                    {genders.map((item) => (
-                                        <div key={item.id} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`gender-${item.id}`}
-                                                checked={selectedGenders.includes(item.id)}
-                                                onCheckedChange={(checked) =>
-                                                    handleGenderChange(item.id, checked as boolean)
-                                                }
-                                            />
-                                            <Label
-                                                className="text-md font-normal"
-                                                htmlFor={`gender-${item.id}`}
-                                            >
-                                                {item.label}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                </div>
+                                   <Select onValueChange={(value) => handleGenderChange(value, true)}>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select Gender" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {genders.map((gender) => (
+                                            <SelectItem key={gender.id} value={gender.id}>
+                                                {gender.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             {/* Categories Checkboxes */}
@@ -268,25 +269,19 @@ const AddProduct = () => {
                                 <p className="text-sm text-gray-500 mb-4">
                                     Select the applicable categories
                                 </p>
-                                <div className="space-y-2">
-                                    {categories.map((item) => (
-                                        <div key={item.id} className="flex items-center gap-2">
-                                            <Checkbox
-                                                id={`category-${item.id}`}
-                                                checked={selectedCategories.includes(item.id)}
-                                                onCheckedChange={(checked) =>
-                                                    handleCategoryChange(item.id, checked as boolean)
-                                                }
-                                            />
-                                            <Label
-                                                className="text-md font-normal"
-                                                htmlFor={`category-${item.id}`}
-                                            >
-                                                {item.label}
-                                            </Label>
-                                        </div>
-                                    ))}
-                                </div>
+                                <Select onValueChange={(value) => handleCategoryChange(value, true)}>
+                                    <SelectTrigger className="w-full">
+                                        <SelectValue placeholder="Select Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {categories.map((category) => (
+                                            <SelectItem key={category.id} value={category.id}>
+                                                {category.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                         
                             </div>
                         </div>
 

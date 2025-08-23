@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import Link from "next/link";
+import { ja } from "date-fns/locale";
 // Removed useToast import
 // import { useToast } from "@/components/ui/use-toast";
 
@@ -39,6 +40,10 @@ const AddProductVariant = () => {
     const [variantPrice, setVariantPrice] = useState<number>(0);
     const [variantQuantity, setVariantQuantity] = useState<number>(0);
     const [variantMinimumQuantity, setVariantMinimumQuantity] = useState<number>(5);
+    const [variantStockQuantityAtJah, setVariantStockQuantityAtJah] = useState<number>(0);
+    const [variantStockQuantityAtShop676, setVariantStockQuantityAtShop676] = useState<number>(0);
+
+
 
     // Variant options states (materials, sizes, colors)
     const [materials, setMaterials] = useState<{ id: string; label: string }[]>([]);
@@ -225,6 +230,8 @@ const AddProductVariant = () => {
                         material: selectedMaterialId,
                         size: selectedSizeId,
                         color: selectedColorId,
+                        jah_quantity: variantStockQuantityAtJah,
+                        noik_quantity: variantStockQuantityAtShop676,
                         // DO NOT include 'product' here initially
                     },
                 }),
@@ -322,7 +329,7 @@ const AddProductVariant = () => {
             <h2 className="text-center text-3xl font-bold text-white mb-4">Add Product Variant</h2>
 
             <h2 className="text-center text-2xl font-bold text-white">Select the Product Category</h2>
-            <div className="flex w-full max-w-4xl gap-4 flex-wrap justify-center">
+            <div className=" w-full max-w-4xl grid grid-cols-4 gap-4 ">
                 {categories.map((item) => (
                     <div
                         key={item.id}
@@ -433,6 +440,34 @@ const AddProductVariant = () => {
                                         value={variantMinimumQuantity === 0 ? "" : variantMinimumQuantity}
                                         onChange={(e) => setVariantMinimumQuantity(parseInt(e.target.value) || 0)}
                                         required
+                                    />
+                                </div>
+
+                                      <div>
+                                    <Label className="text-lg mb-2 block" htmlFor="variantStockQuantityAtJah">
+                                        Variant Stock Quantity at Jah
+                                    </Label>
+                                    <Input
+                                        id="variantStockQuantityAtJah"
+                                        type="number"
+                                        placeholder="e.g., 4"
+                                        value={variantStockQuantityAtJah === 0 ? "" : variantStockQuantityAtJah}
+                                        onChange={(e) => setVariantStockQuantityAtJah(parseInt(e.target.value) || 0)}
+                                        
+                                    />
+                                </div>
+
+                     <div>
+                                    <Label className="text-lg mb-2 block" htmlFor="variantStockQuantityAtShop676">
+                                        Variant Stock Quantity at Shop 676
+                                    </Label>
+                                    <Input
+                                        id="variantStockQuantityAtShop676"
+                                        type="number"
+                                        placeholder="e.g., 0"
+                                        value={variantStockQuantityAtShop676 === 0 ? "" : variantStockQuantityAtShop676}
+                                        onChange={(e) => setVariantStockQuantityAtShop676(parseInt(e.target.value) || 0)}
+                                        
                                     />
                                 </div>
 

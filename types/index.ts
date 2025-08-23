@@ -89,6 +89,8 @@ export type ProductVariant = {
   price: number;
   quantity: number;
   minimum_quantity: number;
+  jah_quantity: number;
+  noik_quantity: number;
   color: Color;
   material: Material;
   size: Size;
