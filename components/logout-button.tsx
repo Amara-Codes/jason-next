@@ -51,7 +51,7 @@ export default function LogoutButton() {
   return (
     <button
       onClick={handleLogout}
-      className="lg:bg-red-500 lg:hover:bg-red-600 text-white font-bold lg:py-2 lg:px-4 lg:rounded-lg lg:shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mb-1.5 lg:mb-0"
+      className="lg:bg-red-500 lg:hover:bg-red-600 text-white font-bold lg:py-2 lg:px-4  mb-1.5 lg:mb-0 me-4 lg:rounded-lg lg:shadow-md transition duration-300 ease-in-out transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
       disabled={loading} // Disable button while loading
     >
       <div className="hidden lg:block">

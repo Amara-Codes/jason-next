@@ -10,14 +10,6 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="flex flex-col w-full">
-      <div className="w-full flex justify-between items-center mt-4">
-        <div className="gapper">
-        </div>
-        <Link href="/" className="font-chase text-8xl hidden lg:block">Jason</Link>
-        <div className="me-4">
-          <LogoutButton />
-        </div>
-      </div>
 
       <div className="flex lg:p-8 p-2 gap-16 w-full">
         {/* Main content area */}

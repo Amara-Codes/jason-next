@@ -131,3 +131,9 @@
 .font-chase {
   font-family: 'Chase';
 }
+
+.manual-lg-me-4 {
+  @media screen and (min-width: 1024px) {
+    margin-right: 1rem; 
+  }
+}

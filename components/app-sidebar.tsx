@@ -2,7 +2,7 @@
 
 import { Home, Cross, Boxes, Search, Settings, ChartNoAxesCombined, Bot } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";  
+import Link from "next/link";
 
 import {
     useSidebar,
@@ -68,6 +68,9 @@ function useSidebarLinkHandler() {
     }
 }
 export function AppSidebar() {
+    // Call the hook at the top level of the component.
+    const handleLinkClick = useSidebarLinkHandler();
+
     return (
         <Sidebar>
             <SidebarHeader>
@@ -88,12 +91,11 @@ export function AppSidebar() {
                             {basic.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
-
-                                        <Link href={item.url} onClick={useSidebarLinkHandler()}>
+                                        {/* Use the handler function obtained from the hook call above. */}
+                                        <Link href={item.url} onClick={handleLinkClick}>
                                             <item.icon />
                                             <span>{item.title}</span>
                                         </Link>
-
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             ))}
@@ -107,7 +109,8 @@ export function AppSidebar() {
                             {advanced.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
-                                        <Link href={item.url}>
+                                        {/* Apply the same handler here for consistent behavior. */}
+                                        <Link href={item.url} onClick={handleLinkClick}>
                                             <item.icon />
                                             <span>{item.title}</span>
                                         </Link>
