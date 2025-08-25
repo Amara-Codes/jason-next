@@ -432,7 +432,7 @@ const Search = () => {
 
     if (loading && products.length === 0) {
         return (
-            <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-2xl">
+            <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-center lg:text-2xl">
                 Loading data... ⏳
             </div>
         );
@@ -440,7 +440,7 @@ const Search = () => {
 
     if (error) {
         return (
-            <div className="flex justify-center items-center min-h-screen bg-red-800 text-white text-2xl text-center p-4">
+            <div className="flex justify-center items-center min-h-screen bg-red-800 text-white text-center lg:text-2xl">
                 Error: {error}. Please ensure your Strapi server is running and permissions are set correctly. 🚨
             </div>
         );
@@ -474,28 +474,29 @@ const Search = () => {
                     if (products.length === index + 1) {
                         // Attach the ref to the last element for infinite scroll
                         return (
-                            <Card key={product.id} ref={lastProductElementRef} className="bg-white text-gray-800 shadow-lg relative pt-0 min-h-[320px]">
-                                <CardContent className="p-4 flex flex-col justify-between h-full">
+                            <Card key={product.id} ref={lastProductElementRef} className="bg-white text-gray-800 shadow-lg relative py-0 min-h-[320px]">
+                                <CardContent className="p-2 flex flex-col justify-between h-full">
                                     <div className="flex justify-end mb-8">
 
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleEditProductClick(product)}
-                                            className="text-gray-600 hover:text-blue-600"
+                                            className="text-gray-600 hover:text-blue-600 p-0"
                                         >
                                             {/* <PencilIcon className="h-5 w-5" /> */}
                                             ✏️ Edit
                                         </Button>
 
-                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick} className="text-gray-600 hover:text-red-600">
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick} className="text-gray-600 hover:text-red-600 p-0">
                                             <Trash2 className="h-5 w-5" />
                                             `</Button>
                                     </div>
-                                    <div className="flex mb-2">
+
+                                    <div className="ps-2">
                                         <h3 className="text-xl font-semibold uppercase">{product.name}</h3>
+                                        <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     <Button
                                         onClick={() => handleShowVariantsClick(product)}
                                         className="mt-auto bg-teal-600 hover:bg-teal-700 text-white"
@@ -507,28 +508,28 @@ const Search = () => {
                         );
                     } else {
                         return (
-                            <Card key={product.id} className="bg-white text-gray-800 shadow-lg relative pt-0 min-h-[320px]">
-                                <CardContent className="p-4 flex flex-col justify-between h-full">
+                            <Card key={product.id} className="bg-white text-gray-800 shadow-lg relative py-0 min-h-[320px]">
+                                <CardContent className="p-2 flex flex-col justify-between h-full">
                                     <div className="flex justify-end mb-8">
 
                                         <Button
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => handleEditProductClick(product)}
-                                            className="text-gray-600 hover:text-teal-600"
+                                            className="text-gray-600 hover:text-teal-600 p-0"
                                         >
                                             {/* <PencilIcon className="h-5 w-5" /> */}
                                             ✏️ Edit
                                         </Button>
 
-                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick(product)} className="text-red-600 hover:text-red-800">
+                                        <Button variant="ghost" size="sm" onClick={() => handleDeleteProductClick(product)} className="text-red-600 hover:text-red-800 p-0">
                                             <Trash2 className="h-5 w-5" />
                                         </Button>
                                     </div>
-                                    <div className="flex mb-2">
+                                    <div className="ps-2">
                                         <h3 className="text-xl font-semibold uppercase">{product.name}</h3>
+                                        <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     </div>
-                                    <p className="text-sm text-gray-600 mb-4">{product.description}</p>
                                     <Button
                                         onClick={() => handleShowVariantsClick(product)}
                                         className="mt-auto bg-teal-600 hover:bg-teal-700 text-white"
@@ -566,7 +567,7 @@ const Search = () => {
                     {productToEdit && (
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="name" className="text-right">
+                                <Label htmlFor="name" className="">
                                     Name
                                 </Label>
                                 <Input
@@ -599,7 +600,7 @@ const Search = () => {
 
             {/* Show Variants Modal */}
             <AlertDialog open={isVariantsModalOpen} onOpenChange={setIsVariantsModalOpen}>
-                <AlertDialogContent className="max-h-[80vh] overflow-y-auto"> {/* Added max-h and overflow for scrollable content */}
+                <AlertDialogContent className="max-h-[80vh] overflow-y-auto px-2 lg:px-8"> {/* Added max-h and overflow for scrollable content */}
                     <AlertDialogHeader>
                         <AlertDialogTitle>Product Variants</AlertDialogTitle>
                         <AlertDialogDescription>
@@ -666,7 +667,7 @@ const Search = () => {
                         <>
                             <div className="grid gap-4 py-4">
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-name" className="text-right">
+                                    <Label htmlFor="variant-name" className="">
                                         Name
                                     </Label>
                                     <Input
@@ -677,7 +678,7 @@ const Search = () => {
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-price" className="text-right">
+                                    <Label htmlFor="variant-price" className="">
                                         Price
                                     </Label>
                                     <Input
@@ -689,7 +690,7 @@ const Search = () => {
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-quantity" className="text-right">
+                                    <Label htmlFor="variant-quantity" className="">
                                         Quantity
                                     </Label>
                                     <Input
@@ -701,7 +702,7 @@ const Search = () => {
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-min-stock" className="text-right">
+                                    <Label htmlFor="variant-min-stock" className="">
                                         Min Quantity
                                     </Label>
                                     <Input
@@ -713,7 +714,7 @@ const Search = () => {
                                     />
                                 </div>
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-jah-stock" className="text-right">
+                                    <Label htmlFor="variant-jah-stock" className="">
                                         Jah Quantity
                                     </Label>
                                     <Input
@@ -725,8 +726,8 @@ const Search = () => {
                                     />
                                 </div>
 
-                                             <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-noik-stock" className="text-right">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="variant-noik-stock" className="">
                                         676 Quantity
                                     </Label>
                                     <Input
@@ -741,7 +742,7 @@ const Search = () => {
 
                                 {/* Size Select */}
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-size" className="text-right col-span-1">Size</Label>
+                                    <Label htmlFor="variant-size" className=" col-span-1">Size</Label>
                                     <Select
                                         value={variantToEdit.size?.id || ""}
                                         onValueChange={(value) => {
@@ -765,7 +766,7 @@ const Search = () => {
                                 </div>
                                 {/* Color Select */}
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-color" className="text-right">Color</Label>
+                                    <Label htmlFor="variant-color" className="">Color</Label>
                                     <Select
                                         value={variantToEdit.color?.id || ""}
                                         onValueChange={(value) => {
@@ -788,7 +789,7 @@ const Search = () => {
                                 </div>
                                 {/* Material Select */}
                                 <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="variant-material" className="text-right">Material</Label>
+                                    <Label htmlFor="variant-material" className="">Material</Label>
                                     <Select
                                         value={variantToEdit.material?.id || ""}
                                         onValueChange={(value) => {

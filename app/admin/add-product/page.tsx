@@ -175,7 +175,7 @@ const AddProduct = () => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-2xl">
+            <div className="flex justify-center items-center min-h-screen bg-teal-800 text-white text-center lg:text-2xl">
                 Loading genders and categories... ⏳
             </div>
         );
@@ -183,7 +183,7 @@ const AddProduct = () => {
 
     if (error) {
         return (
-            <div className="flex justify-center items-center min-h-screen bg-red-800 text-white text-2xl text-center p-4">
+            <div className="flex justify-center items-center min-h-screen bg-red-800 text-white text-center lg:text-2xl">
                 Error: {error}. Please ensure your Strapi server is running and permissions are set correctly. 🚨
             </div>
         );
@@ -242,13 +242,7 @@ const AddProduct = () => {
                         <div className="flex flex-col md:flex-row justify-between gap-6">
                             {/* Gender Checkboxes */}
                             <div className="flex-1">
-
-                      
-
                                 <Label className="text-lg">Gender</Label>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    Select the applicable genders
-                                </p>
                                    <Select onValueChange={(value) => handleGenderChange(value, true)}>
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Select Gender" />
@@ -265,10 +259,7 @@ const AddProduct = () => {
 
                             {/* Categories Checkboxes */}
                             <div className="flex-1">
-                                <Label className="text-lg">Categories</Label>
-                                <p className="text-sm text-gray-500 mb-4">
-                                    Select the applicable categories
-                                </p>
+                                <Label className="text-lg">Category</Label>
                                 <Select onValueChange={(value) => handleCategoryChange(value, true)}>
                                     <SelectTrigger className="w-full">
                                         <SelectValue placeholder="Select Category" />

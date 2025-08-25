@@ -325,11 +325,13 @@ const AddProductVariant = () => {
     }
 
     return (
-        <div className="flex flex-col gap-y-8 items-center min-h-screen bg-teal-800 p-4">
+        <div className="min-h-screen bg-teal-800">
+            <div className="flex flex-col items-center p-4 pb-8 gap-y-8">
+
             <h2 className="text-center text-3xl font-bold text-white mb-4">Add Product Variant</h2>
 
-            <h2 className="text-center text-2xl font-bold text-white">Select the Product Category</h2>
-            <div className=" w-full max-w-4xl grid grid-cols-4 gap-4 ">
+            <h3 className="text-center text-2xl font-bold text-white">Select the Product Category</h3>
+            <div className=" w-full max-w-4xl grid grid-cols-3 lg:grid-cols-4 gap-4 px-2 lg:px-0">
                 {categories.map((item) => (
                     <div
                         key={item.id}
@@ -341,12 +343,11 @@ const AddProductVariant = () => {
                     </div>
                 ))}
             </div>
-
             {selectedCategory && (
                 <>
                     <h2 className="text-center text-2xl font-bold text-white mt-8">Select a Product</h2>
-                    <Card className="w-full max-w-6xl p-4">
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Card className="w-full lg:max-w-6xl lg:p-4 py-2 lg:py-6">
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2 lg:p-4">
                             {loading && selectedCategory ? (
                                 <p className="text-center text-lg col-span-full">Loading products... ⏳</p>
                             ) : products.length > 0 ? (
@@ -369,9 +370,11 @@ const AddProductVariant = () => {
                     </Card>
                 </>
             )}
+            </div>
+
 
             {selectedProduct && (
-                <div className="w-full max-w-6xl p-4 bg-teal-900 rounded-lg text-white">
+                <div className="w-full max-w-6xl mx-auto p-4 bg-teal-900 text-white rounded-none">
                     <div className="my-8 ps-2 text-white">
                         <h3 className="text-xl font-bold mb-4">Selected Product for Variant Creation:</h3>
                         <div className="flex items-baseline mb-2">
@@ -384,10 +387,10 @@ const AddProductVariant = () => {
                         </div>
                     </div>
 
-                    <Card className="w-full max-w-6xl mt-4">
-                        <CardContent className="pt-6">
+                    <Card className="w-full max-w-6xl mt-4 rounded-md lg:rounded-xl lg:bg-white">
+                        <CardContent className="pt-6 px-2 lg:px-6">
                             <form onSubmit={handleSubmitVariant} className="space-y-6">
-                                <div>
+                                <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantName">
                                         Variant Name
                                     </Label>
@@ -400,7 +403,7 @@ const AddProductVariant = () => {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantPrice">
                                         Variant Price
                                     </Label>
@@ -415,7 +418,7 @@ const AddProductVariant = () => {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantQuantity">
                                         Variant Quantity
                                     </Label>
@@ -429,7 +432,7 @@ const AddProductVariant = () => {
                                     />
                                 </div>
 
-                                <div>
+                                <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantMinimumQuantity">
                                         Variant Minimum Quantity
                                     </Label>
@@ -443,7 +446,7 @@ const AddProductVariant = () => {
                                     />
                                 </div>
 
-                                      <div>
+                                      <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantStockQuantityAtJah">
                                         Variant Stock Quantity at Jah
                                     </Label>
@@ -457,7 +460,7 @@ const AddProductVariant = () => {
                                     />
                                 </div>
 
-                     <div>
+                     <div className="ps-2">
                                     <Label className="text-lg mb-2 block" htmlFor="variantStockQuantityAtShop676">
                                         Variant Stock Quantity at Shop 676
                                     </Label>
@@ -472,7 +475,7 @@ const AddProductVariant = () => {
                                 </div>
 
                                 <div className="flex flex-col md:flex-row justify-between gap-6">
-                                    <div className="flex-1">
+                                    <div  className="flex-1 ps-2">
                                         <Label className="text-lg mb-2 block">Size</Label>
                                         <Select value={selectedSizeId || ""} onValueChange={setSelectedSizeId}>
                                             <SelectTrigger className="w-full">
@@ -488,7 +491,7 @@ const AddProductVariant = () => {
                                         </Select>
                                     </div>
 
-                                    <div className="flex-1">
+                                    <div  className="flex-1 ps-2">
                                   <Label className="text-lg mb-2 block">Color</Label>
                                         {/* Use the new ColorPickerButton here */}
                                         <ColorPickerButton
@@ -498,7 +501,7 @@ const AddProductVariant = () => {
                                         />
                                     </div>
 
-                                    <div className="flex-1">
+                                    <div  className="flex-1 ps-2">
                                         <Label className="text-lg mb-2 block">Material</Label>
                                         <Select value={selectedMaterialId || ""} onValueChange={setSelectedMaterialId}>
                                             <SelectTrigger className="w-full">

@@ -1,7 +1,11 @@
+"use client"
+
 import { Home, Cross, Boxes, Search, Settings, ChartNoAxesCombined, Bot } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
+import Link from "next/link";  
+
 import {
+    useSidebar,
     Sidebar,
     SidebarHeader,
     SidebarContent,
@@ -55,18 +59,26 @@ const advanced = [
     }
 ]
 
+function useSidebarLinkHandler() {
+    const { isMobile, setOpenMobile } = useSidebar()
+    return () => {
+        if (isMobile) {
+            setOpenMobile(false)
+        }
+    }
+}
 export function AppSidebar() {
     return (
         <Sidebar>
             <SidebarHeader>
-                <div className="w-full flex">
+                <Link href="/admin" className="w-full flex">
                     <Image
                         src="/assets/img/logo.png"
                         alt="Logo"
                         width={80}
                         height={80}
                     />
-                </div>
+                </Link>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarGroup>
@@ -77,7 +89,7 @@ export function AppSidebar() {
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild>
 
-                                        <Link href={item.url}>
+                                        <Link href={item.url} onClick={useSidebarLinkHandler()}>
                                             <item.icon />
                                             <span>{item.title}</span>
                                         </Link>

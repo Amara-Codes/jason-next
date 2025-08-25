@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-
 import LogoutButton from "@/components/logout-button";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Jason - Admin",
@@ -13,15 +13,15 @@ export default function Home() {
       <div className="w-full flex justify-between items-center mt-4">
         <div className="gapper">
         </div>
-        <div className="font-chase text-8xl">Jason</div>
-        <div className="me-10">
+        <Link href="/" className="font-chase text-8xl hidden lg:block">Jason</Link>
+        <div className="me-4">
           <LogoutButton />
         </div>
       </div>
 
-      <div className="flex p-8 gap-16 w-full">
+      <div className="flex lg:p-8 p-2 gap-16 w-full">
         {/* Main content area */}
-        <div className="bg-teal-800 p-8 grow text-white relative rounded-xl shadow-lg overflow-x-hidden"> {/* Reduced padding to p-8, added rounded corners and shadow */}
+        <div className="bg-teal-800 lg:p-8 p-4 grow text-white relative rounded-xl shadow-lg overflow-x-hidden"> {/* Reduced padding to p-8, added rounded corners and shadow */}
 
           <div className="mt-8 text-lg gap-4 overflow-y-auto"> {/* Added relative, overflow-y-auto and max-h for potential long content */}
           <h1 className="text-4xl text-white font-bold text-center mb-8">Welcome to the Admin Dashboard</h1> {/* Added mb-8 for spacing */}
